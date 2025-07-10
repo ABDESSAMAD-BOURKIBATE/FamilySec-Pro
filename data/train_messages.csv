@@ -1,0 +1,13 @@
+message,label
+Hello, how are you today?,safe
+Your account has been suspended, confirm now!,phishing
+Click this suspicious link immediately!,http
+Can we meet for dinner tomorrow?,safe
+You've won a prize, claim it here!,phishing
+Urgent: Update your payment info now!,phishing
+This is a friendly reminder for your appointment.,safe
+Check out this suspicious link: http://malicious-site.com,http
+Beware of phishing scams targeting your bank account.,phishing
+Have a great day!,safe
+2,safe
+2,safe

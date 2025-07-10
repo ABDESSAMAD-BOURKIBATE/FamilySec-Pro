@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "message": "hello",
+    "level": "safe"
+  },
+  {
+    "id": 2,
+    "message": "good",
+    "level": "safe"
+  }
+]

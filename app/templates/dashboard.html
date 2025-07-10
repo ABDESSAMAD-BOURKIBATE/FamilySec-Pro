@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>لوحة تحكم FamilySec-Pro</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #5a42a6;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        main {
+            max-width: 900px;
+            margin: 40px auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.1rem;
+        }
+        th, td {
+            padding: 12px 18px;
+            border-bottom: 1px solid #555;
+            text-align: center;
+        }
+        th {
+            background-color: #5a42a6;
+        }
+        tr:hover {
+            background-color: #503b85;
+        }
+        .level-safe {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .level-phishing {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .level-http {
+            color: #f44336;
+            font-weight: bold;
+        }
+        form {
+            margin-top: 30px;
+            text-align: center;
+        }
+        input[type="text"], select {
+            padding: 10px;
+            width: 300px;
+            max-width: 90vw;
+            font-size: 1rem;
+            margin: 0 10px 10px 0;
+            border-radius: 6px;
+            border: none;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #ffd700;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #f1c40f;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <header>لوحة تحكم FamilySec-Pro | تنبيهات الرسائل</header>
+    <main>
+        <h2>تنبيهات النظام</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>رقم</th>
+                    <th>الرسالة</th>
+                    <th>المستوى</th>
+                    <th>حذف</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr>
+                    <td>{{ alert.id }}</td>
+                    <td>{{ alert.message }}</td>
+                    <td class="level-{{ alert.level }}">{{ alert.level }}</td>
+                    <td>
+                        <form method="POST" action="/delete_alert" style="display:inline;">
+                            <input type="hidden" name="id" value="{{ alert.id }}" />
+                            <button type="submit" class="delete-btn">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">لا توجد تنبيهات حالياً</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method="POST" action="/add_alert">
+            <h2>إضافة تنبيه جديد</h2>
+            <input type="text" name="message" placeholder="نص الرسالة" required />
+            <select name="level" required>
+                <option value="">اختر المستوى</option>
+                <option value="safe">آمنة</option>
+                <option value="phishing">احتيالية</option>
+                <option value="http">رابط مشبوه</option>
+            </select>
+            <button type="submit">إضافة تنبيه</button>
+        </form>
+    </main>
+</body>
+</html>
