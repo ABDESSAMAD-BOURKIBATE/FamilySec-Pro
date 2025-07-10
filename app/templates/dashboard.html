@@ -98,12 +98,19 @@
         .delete-btn:hover {
             background-color: #c0392b;
         }
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #ccc;
+            margin-top: 50px;
+        }
     </style>
 </head>
 <body>
     <header>لوحة تحكم FamilySec-Pro | تنبيهات الرسائل</header>
+
     <main>
-        <h2>تنبيهات النظام</h2>
+        <h2>📋 قائمة التنبيهات</h2>
         <table>
             <thead>
                 <tr>
@@ -122,18 +129,20 @@
                     <td>
                         <form method="POST" action="/delete_alert" style="display:inline;">
                             <input type="hidden" name="id" value="{{ alert.id }}" />
-                            <button type="submit" class="delete-btn">حذف</button>
+                            <button type="submit" class="delete-btn">🗑 حذف</button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4">لا توجد تنبيهات حالياً</td></tr>
+                <tr>
+                    <td colspan="4">لا توجد تنبيهات حاليًا</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
 
         <form method="POST" action="/add_alert">
-            <h2>إضافة تنبيه جديد</h2>
+            <h2>➕ إضافة تنبيه جديد</h2>
             <input type="text" name="message" placeholder="نص الرسالة" required />
             <select name="level" required>
                 <option value="">اختر المستوى</option>
@@ -143,6 +152,14 @@
             </select>
             <button type="submit">إضافة تنبيه</button>
         </form>
+
+        <form method="POST" action="/clear_alerts" style="margin-top: 20px;">
+            <button type="submit" class="delete-btn" style="background-color:#a93226;">🗑 حذف جميع التنبيهات</button>
+        </form>
     </main>
+
+    <div class="footer">
+        جميع الحقوق محفوظة © 2025 | تصميم وتطوير: <strong>عبد الصمد بوركيبات</strong>
+    </div>
 </body>
 </html>

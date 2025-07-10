@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>لوحة تحكم FamilySec-Pro | تنبيهات الرسائل</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css"
+    rel="stylesheet"
+  />
+  <!-- خطوط عربية Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo&family=Tajawal&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif !important;
+      background: #0f0f18;
+      color: #e0e0e0;
+      padding: 25px;
+      min-height: 100vh;
+    }
+
+    h1, h2 {
+      color: #8a2be2; /* بنفسجي */
+      text-shadow: 0 0 15px #ff33cc, 0 0 30px #8a2be2;
+      font-weight: 900;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      background: #1a1a2e;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 20px #8a2be2;
+    }
+
+    thead th {
+      background: #8a2be2;
+      color: #fff;
+      text-shadow: 0 0 7px #ff33cc;
+    }
+
+    tbody tr {
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    tbody tr:hover {
+      background: #440044;
+      cursor: pointer;
+      box-shadow: 0 0 15px #ff33cc;
+    }
+
+    /* ألوان حسب مستوى التنبيه */
+    .table-success {
+      background-color: #4b0073 !important;
+      color: #ff33cc !important;
+      text-shadow: 0 0 10px #ff66dd;
+    }
+    .table-danger {
+      background-color: #9a004c !important;
+      color: #ff66dd !important;
+      text-shadow: 0 0 10px #8a2be2;
+    }
+    .table-warning {
+      background-color: #b10086 !important;
+      color: #ff79c6 !important;
+      text-shadow: 0 0 10px #ff33cc;
+    }
+
+    /* أزرار */
+    .btn-primary {
+      background-color: #8a2be2;
+      border: none;
+      box-shadow: 0 0 15px #ff33cc;
+      transition: background-color 0.3s ease;
+    }
+    .btn-primary:hover {
+      background-color: #7a29cc;
+      box-shadow: 0 0 25px #ff66dd;
+    }
+
+    .btn-danger {
+      background-color: #ff33cc;
+      border: none;
+      box-shadow: 0 0 15px #8a2be2;
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background-color: #e600b8;
+      box-shadow: 0 0 25px #ff66dd;
+      color: #fff;
+    }
+
+    .btn-success {
+      background-color: #ff66dd;
+      border: none;
+      box-shadow: 0 0 15px #8a2be2;
+      color: #0a0a0a;
+    }
+    .btn-success:hover {
+      background-color: #f72585;
+      box-shadow: 0 0 25px #8a2be2;
+      color: #000;
+    }
+
+    /* حقول النص والقوائم */
+    textarea, select {
+      background: #2e2e3e;
+      border: 1px solid #8a2be2;
+      color: #fff;
+      box-shadow: 0 0 10px #ff33cc inset;
+      border-radius: 6px;
+      transition: box-shadow 0.3s ease;
+    }
+    textarea:focus, select:focus {
+      box-shadow: 0 0 25px #ff33cc;
+      outline: none;
+    }
+
+    /* رسائل التنبيه */
+    .alert {
+      border-radius: 6px;
+      box-shadow: 0 0 20px #8a2be2;
+      font-weight: 600;
+    }
+
+    /* زر إغلاق التنبيه */
+    .btn-close {
+      filter: invert(1);
+      opacity: 0.8;
+    }
+    .btn-close:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">
+      لوحة تحكم
+      <span style="color:#ff33cc;">FamilySec-Pro</span>
+    </h1>
+
+    <!-- رسائل الفلاش -->
+    <div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="إغلاق"
+        ></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- جدول التنبيهات -->
+    <section class="mb-5">
+      <h2>تنبيهات الرسائل</h2>
+      <table class="table table-hover text-center align-middle">
+        <thead>
+          <tr>
+            <th>رقم</th>
+            <th class="text-start">الرسالة</th>
+            <th>المستوى</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alert in alerts %}
+          <tr
+            class="
+            {% if alert.level == 'safe' %}table-success{% endif %}
+            {% if alert.level == 'phishing' %}table-danger{% endif %}
+            {% if alert.level == 'http' %}table-warning{% endif %}
+          "
+          >
+            <td>{{ alert.id }}</td>
+            <td class="text-start">{{ alert.message }}</td>
+            <td>
+              {% if alert.level == 'safe' %}
+              ✅ آمنة
+              {% elif alert.level == 'phishing' %}
+              ⚠️ احتيالية
+              {% elif alert.level == 'http' %}
+              🚨 رابط مشبوه
+              {% else %}
+              🔘 غير معروف
+              {% endif %}
+            </td>
+            <td>
+              <a
+                href="{{ url_for('delete_alert', alert_id=alert.id) }}"
+                class="btn btn-danger btn-sm"
+                onclick="return confirm('هل أنت متأكد من حذف التنبيه؟')"
+                >🗑 حذف</a
+              >
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4">لا توجد تنبيهات حالياً.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- إضافة تنبيه جديد -->
+    <section class="mb-5">
+      <h2>إضافة تنبيه جديد</h2>
+      <form action="{{ url_for('add_alert') }}" method="post" class="row g-3">
+        <div class="col-12">
+          <label for="message" class="form-label">نص الرسالة:</label>
+          <textarea
+            id="message"
+            name="message"
+            class="form-control"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="level" class="form-label">المستوى:</label>
+          <select id="level" name="level" class="form-select" required>
+            <option value="safe">✅ آمنة</option>
+            <option value="phishing">⚠️ احتيالية</option>
+            <option value="http">🚨 رابط مشبوه</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">إضافة تنبيه</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- تحليل رسالة -->
+    <section>
+      <h2>تحليل رسالة جديدة</h2>
+      <form action="{{ url_for('analyze') }}" method="post">
+        <div class="mb-3">
+          <label for="message_to_analyze" class="form-label"
+            >أدخل رسالة للتحليل:</label
+          >
+          <textarea
+            id="message_to_analyze"
+            name="message_to_analyze"
+            class="form-control"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">
+          تحليل وإضافة التنبيه
+        </button>
+      </form>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
