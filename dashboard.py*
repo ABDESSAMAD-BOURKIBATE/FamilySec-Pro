@@ -1,0 +1,274 @@
+import streamlit as st
+import pandas as pd
+import joblib
+import os
+from datetime import datetime
+import plotly.express as px
+
+# إعداد الصفحة
+st.set_page_config(
+    page_title="🔒 FamilySec-Pro | لوحة الحماية الأسرية",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+MODEL_PATH = "app/model.pkl"
+ALERTS_FILE = "alerts.json"
+
+@st.cache_resource
+def load_model():
+    try:
+        return joblib.load(MODEL_PATH)
+    except Exception as e:
+        st.error(f"❌ خطأ في تحميل النموذج: {e}")
+        return None
+
+model = load_model()
+
+def load_alerts():
+    if os.path.exists(ALERTS_FILE):
+        try:
+            df = pd.read_json(ALERTS_FILE)
+            if isinstance(df, dict):
+                df = pd.DataFrame(df)
+            return df
+        except Exception:
+            return pd.DataFrame()
+    return pd.DataFrame()
+
+def save_alerts(df):
+    try:
+        df.to_json(ALERTS_FILE, orient="records", date_format="iso")
+    except Exception as e:
+        st.error(f"⚠️ خطأ أثناء حفظ السجل: {e}")
+
+alerts = load_alerts()
+
+# تأمين الأعمدة الأساسية
+required_cols = ["message", "level", "timestamp"]
+if not set(required_cols).issubset(alerts.columns):
+    alerts = pd.DataFrame(columns=required_cols)
+    save_alerts(alerts)
+    st.warning("✅ تم إصلاح سجل التنبيهات تلقائيًا.")
+
+def analyze_message(model, message):
+    if not message.strip():
+        return "invalid"
+    return model.predict([message])[0]
+
+LEVEL_STYLES = {
+    "phishing": {"bg": "#ff4c4c", "fg": "#fff", "emoji": "⚠️", "desc": "رسالة تصيد احتيالية"},
+    "spam": {"bg": "#ff9900", "fg": "#000", "emoji": "📧", "desc": "رسالة مزعجة"},
+    "scam": {"bg": "#ff007f", "fg": "#fff", "emoji": "🚨", "desc": "عملية احتيال"},
+    "malware": {"bg": "#9b59b6", "fg": "#fff", "emoji": "🦠", "desc": "برمجيات خبيثة"},
+    "safe": {"bg": "#2ecc71", "fg": "#fff", "emoji": "✅", "desc": "آمنة"},
+    "invalid": {"bg": "#95a5a6", "fg": "#fff", "emoji": "❓", "desc": "غير صالحة"},
+}
+
+# --- CSS ---
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal&display=swap');
+    body, .main {
+        background-color: #0d1117;
+        color: #c9d1d9;
+        direction: rtl;
+        font-family: 'Tajawal', sans-serif !important;
+    }
+    .title {
+        font-size: 3rem;
+        font-weight: 900;
+        text-align: center;
+        color: #00ff99;
+        user-select: none;
+        margin-bottom: 10px;
+        transition: color 0.3s ease;
+    }
+    .title:hover {
+        color: #ff66cc;
+        cursor: pointer;
+    }
+    div.stButton > button {
+        background: linear-gradient(90deg, #00ff99, #00cc66);
+        border: none;
+        color: #0d1117;
+        font-weight: bold;
+        font-size: 1rem;
+        padding: 10px 25px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        margin: 10px 0;
+    }
+    div.stButton > button:hover {
+        background: linear-gradient(90deg, #ff66cc, #cc3399);
+        color: #fff;
+    }
+    textarea {
+        background-color: #161b22;
+        color: #00ff99 !important;
+        border: 2px solid #00ff99 !important;
+        border-radius: 12px !important;
+        font-size: 1.1rem !important;
+        padding: 15px !important;
+        resize: vertical !important;
+    }
+    .dataframe tbody tr:hover {
+        background-color: #004d40 !important;
+        color: #a7ffeb !important;
+    }
+    ::-webkit-scrollbar {
+        width: 8px;
+        background-color: #0d1117;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, #00ff99, #00cc66);
+        border-radius: 10px;
+    }
+    .sidebar .sidebar-content {
+        background: #121212;
+        font-family: 'Tajawal', sans-serif !important;
+        transition: background 0.3s ease;
+    }
+    .sidebar .sidebar-content:hover {
+        background: linear-gradient(90deg, #00cc66, #00ff99);
+        color: #121212 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown('<h1 class="title">🔒 FamilySec-Pro - لوحة الحماية الأسرية</h1>', unsafe_allow_html=True)
+
+# الشريط الجانبي
+st.sidebar.header("📑 التصنيفات الأساسية")
+if model:
+    for cls in model.classes_:
+        info = LEVEL_STYLES.get(cls, {"emoji": "❔", "desc": cls})
+        st.sidebar.markdown(f"{info['emoji']} **{cls}**: {info['desc']}")
+else:
+    st.sidebar.write("❌ النموذج غير محمل")
+
+# التبويبات
+tab1, tab2, tab3 = st.tabs(["📨 تحليل رسالة", "📂 تحليل ملف", "📊 إحصائيات"])
+
+with tab1:
+    new_msg = st.text_area("💬 أدخل الرسالة هنا:", height=150)
+    if st.button("🔍 تحليل"):
+        if not model:
+            st.error("❌ النموذج غير محمل.")
+        elif not new_msg.strip():
+            st.warning("⚠️ أدخل رسالة صالحة.")
+        else:
+            level = analyze_message(model, new_msg)
+            style = LEVEL_STYLES.get(level, LEVEL_STYLES["invalid"])
+            st.markdown(
+                f"""
+                <div style="background:{style['bg']};color:{style['fg']};padding:20px;
+                border-radius:12px;text-align:center;font-weight:700;font-size:20px;">
+                {style['emoji']} النتيجة: {level.upper()}<br><small>{style['desc']}</small>
+                </div>
+                """, unsafe_allow_html=True
+            )
+            alerts.loc[len(alerts)] = {"message": new_msg, "level": level, "timestamp": datetime.now()}
+            save_alerts(alerts)
+
+with tab2:
+    uploaded_file = st.file_uploader("📁 اختر ملف TXT أو CSV", type=["txt", "csv"])
+    if uploaded_file:
+        try:
+            if uploaded_file.type == "text/csv":
+                df_file = pd.read_csv(uploaded_file)
+                messages = df_file["message"].astype(str).tolist() if "message" in df_file.columns else []
+            else:
+                content = uploaded_file.read().decode("utf-8")
+                messages = [line.strip() for line in content.splitlines() if line.strip()]
+
+            if not messages:
+                st.warning("🚫 لم يتم العثور على رسائل صالحة.")
+            else:
+                results = [{"message": m, "level": analyze_message(model, m)} for m in messages]
+                df_results = pd.DataFrame(results)
+                st.dataframe(df_results)
+
+                for r in results:
+                    alerts.loc[len(alerts)] = {"message": r["message"], "level": r["level"], "timestamp": datetime.now()}
+                save_alerts(alerts)
+        except Exception as e:
+            st.error(f"❌ خطأ: {e}")
+
+with tab3:
+    st.header("📊 إحصائيات التصنيفات في سجل التنبيهات")
+    if alerts.empty:
+        st.info("🚫 لا توجد بيانات لعرضها.")
+    else:
+        counts = alerts["level"].value_counts().reset_index()
+        counts.columns = ["level", "count"]
+        counts["emoji"] = counts["level"].map(lambda x: LEVEL_STYLES.get(x, {}).get("emoji", "❓"))
+        counts["desc"] = counts["level"].map(lambda x: LEVEL_STYLES.get(x, {}).get("desc", "غير معروفة"))
+        counts["label_emoji"] = counts.apply(lambda row: f"{row['emoji']} {row['level']}", axis=1)
+
+        fig = px.pie(
+            counts,
+            values="count",
+            names="label_emoji",
+            color="level",
+            color_discrete_map={lvl: style["bg"] for lvl, style in LEVEL_STYLES.items()},
+            title="نسبة كل تصنيف من سجل التنبيهات",
+            hover_data=["desc", "count"],
+        )
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_layout(font_family="Tajawal", font_size=16, legend_title_text='التصنيف')
+
+        st.plotly_chart(fig, use_container_width=True)
+
+# سجل التنبيهات
+st.header("📋 سجل التنبيهات")
+
+if alerts.empty:
+    st.info("🚫 لا توجد رسائل محفوظة.")
+else:
+    alerts = alerts.reset_index(drop=True)
+    for i, row in alerts.iterrows():
+        level = row.get("level", "invalid")
+        style = LEVEL_STYLES.get(level, LEVEL_STYLES["invalid"])
+
+        timestamp = row.get("timestamp", "")
+        if hasattr(timestamp, "isoformat"):
+            timestamp = timestamp.isoformat()
+
+        with st.expander(f"{style['emoji']} [{level.upper()}] | {timestamp[:19]}"):
+            edited = st.text_area("🔄 عدل الرسالة:", value=row.get("message", ""), key=f"edit_{i}")
+            if st.button(f"💾 حفظ التعديل {i}"):
+                alerts.at[i, "message"] = edited
+                save_alerts(alerts)
+                st.success("✅ تم التعديل.")
+            if st.button(f"🗑️ حذف {i}"):
+                alerts.drop(i, inplace=True)
+                alerts.reset_index(drop=True, inplace=True)
+                save_alerts(alerts)
+                st.warning("🗑️ تم الحذف.")
+                st.experimental_rerun()
+
+# تصدير السجل
+if not alerts.empty:
+    csv = alerts.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 تحميل السجل CSV",
+        data=csv,
+        file_name="familysec_alerts.csv",
+        mime="text/csv",
+    )
+
+# التذييل
+st.markdown(
+    """
+    <hr>
+    <div style='text-align:center; font-size: 13px; color: #00ff99; font-family: Tajawal, sans-serif;'>
+    المطور: عبد الصمد بوركيبات | النسخة: 3.0 | جميع الحقوق محفوظة 2025
+    </div>
+    """,
+    unsafe_allow_html=True
+)
