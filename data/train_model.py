@@ -1,47 +1,36 @@
-import os
-import pickle
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+import joblib
 
-# ========= 1. البيانات التدريبية البسيطة =========
-data = {
-    "message": [
-        "مرحباً بك، هذه رسالة آمنة",             # safe
-        "انقر هنا للحصول على الجائزة",            # phishing
-        "يرجى تحديث كلمة مرورك فوراً",             # phishing
-        "هذا رابط تسجيل الدخول: http://xyz.com",  # http
-        "كل شيء على ما يرام، لا تقلق",            # safe
-        "تم اختراق حسابك، انقر هنا",              # phishing
-        "تحديث جديد للنظام متوفر الآن",            # safe
-        "للحصول على خصم اضغط على الرابط"          # phishing
-    ],
-    "label": [
-        "safe",
-        "phishing",
-        "phishing",
-        "http",
-        "safe",
-        "phishing",
-        "safe",
-        "phishing"
-    ]
-}
+# تحميل بيانات التدريب
+df = pd.read_csv("training_data.csv")
 
-df = pd.DataFrame(data)
-
-# ========= 2. تجهيز الـ Vectorizer =========
-vectorizer = TfidfVectorizer()
-X = vectorizer.fit_transform(df["message"])
+# تقسيم البيانات إلى ميزات ووسوم
+X = df["message"]
 y = df["label"]
 
-# ========= 3. تدريب نموذج الانحدار اللوجستي =========
-model = LogisticRegression()
-model.fit(X, y)
+# تقسيم البيانات إلى تدريب واختبار
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# ========= 4. حفظ النموذج والـ Vectorizer =========
-os.makedirs("data", exist_ok=True)
-with open("data/model.pkl", "wb") as f:
-    pickle.dump((model, vectorizer), f)
+# بناء Pipeline: تحويل نص إلى أرقام + نموذج لوجستي
+model_pipeline = Pipeline([
+    ('tfidf', TfidfVectorizer()),
+    ('clf', LogisticRegression(max_iter=1000))
+])
 
-print("✅ تم تدريب النموذج وحفظه في data/model.pkl")
+# تدريب النموذج
+model_pipeline.fit(X_train, y_train)
+
+# تقييم النموذج على بيانات الاختبار
+y_pred = model_pipeline.predict(X_test)
+print("دقة النموذج:", accuracy_score(y_test, y_pred))
+print("\nالتقرير التفصيلي:")
+print(classification_report(y_test, y_pred))
+
+# حفظ النموذج
+joblib.dump(model_pipeline, "app/model.pkl")
+print("✅ تم حفظ النموذج في app/model.pkl")
